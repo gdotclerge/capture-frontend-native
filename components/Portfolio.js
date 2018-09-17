@@ -1,61 +1,73 @@
 import React from 'react';
-import { StyleSheet, Text, View, Button, Alert, CameraRoll, Image, TouchableHighlight } from 'react-native';
+import CameraRollPhoto from './CameraRollPhoto';
 
-export default class Portfolio extends React.Component {
+import {
+  StyleSheet,
+  View,
+  Button,
+  CameraRoll,
+  Image,
+  ScrollView,
+  Dimensions
+} from 'react-native';
+
+const { width } = Dimensions.get('window')
+
+
+export default class MyCameraRoll extends React.Component {
   state = {
-    photo: null,
-    photos: []
+    photos: [],
+    selectedPhotos: []
   }
-
 
   render() {
     if (this.state.photos.length === 0){
       return (
         <View style={styles.container}>
-          <Button title="Click Me!"  onPress={() => {
-            Alert.alert(
-              'Alert Title',
-              'My Alert Msg',
-              [
-                {text: 'Ask me later', onPress: () => CameraRoll.getPhotos({first: 10, assetType: "Photos"})
-                .then((resp)=> {
-                  this.setState({
-                    photo: resp.edges[0].node.image.uri,
-                    photos: resp.edges
-                  })
-                  console.log(resp.edges[0].node.image.uri);
-                })
-              },
-                {text: 'Cancel', onPress: () => console.log('Cancel Pressed'), style: 'cancel'},
-                {text: 'OK', onPress: () => console.log('OK Pressed')},
-              ],
-              { cancelable: false }
-            )
-           }}/>
-          <Text>Open up App.js to start working on your app!</Text>
-          <Text>Changes you make will automatically reload.</Text>
-          <Text>Shake your phone to open the developer menu.</Text>
-          {!!this.state.photo ? <Image source={{uri: this.state.photo }} style={{width: 100, height: 100}} /> : null}
+          <Button title="Get My Photos!"  onPress={this.getPhotos}/>
         </View>
       )
     } else {
       return (
-        <View>
+        <ScrollView contentContainerStyle={styles.scrollView}>
           {this.showImages()}
-        </View>
+        </ScrollView>
       )
     }
   }
 
-  showImages() {
-    return this.state.photos.map((p)=>{
-      return (<TouchableHighlight onPress={()=>{console.log("YOOOOOOOOO")}} >
-              <Image source={{uri: p.node.image.uri }} style={{width: 100, height:100}} />
-              </TouchableHighlight>)
-    })
+  getPhotos = () => {
+    CameraRoll.getPhotos({first: 30, assetType: "Photos"})
+        .then((resp)=> {
+          this.setState({
+            photo: resp.edges[0].node.image.uri,
+            photos: resp.edges
+          })
+        })
   }
-}
 
+  showImages() {
+    return this.state.photos.map((p) => <CameraRollPhoto photo={p} handlePhotoSelect={this.handlePhotoSelect}/>)
+  }
+
+  handlePhotoSelect = (photo) => {
+    if (this.state.selectedPhotos.includes(photo)){
+      photo.selected = false
+      let index = this.state.selectedPhotos.indexOf(photo)
+      let array = [...this.state.selectedPhotos]
+      array.splice(index, 1)
+      this.setState({
+        selectedPhotos: array
+      })
+    } else {
+      photo.selected = true
+      this.setState({
+        selectedPhotos: [...this.state.selectedPhotos, photo]
+      })
+    }
+  }
+
+}
 
 
 const styles = StyleSheet.create({
@@ -64,5 +76,16 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+
+  scrollView: {
+   flexWrap: 'wrap',
+   flexDirection: 'row',
+ },
+
+   cameraRollImage: {
+    width: width/2-20,
+    height: width/2-20,
+    margin: 10,
   },
 });
